@@ -121,10 +121,6 @@ body.playing #screenGame.card{
 .back-btn:active{opacity:.7; transform:scale(0.98)}
 .back-btn::before{content:'←'; font-size:18px; font-weight:bold}
 
-/* SECTION TITLE */
-.sec-title{font-family:'Bangers',cursive; font-size:26px; letter-spacing:2px; color:var(--purple); text-align:center; margin-bottom:14px}
-.sec-sub{font-size:11px; color:var(--muted); text-align:center; margin-top:-8px; margin-bottom:18px; line-height:1.5}
-
 /* MODE BLOCKS */
 .mode-block{margin-bottom:20px}
 .mode-block .menu-btn{margin-bottom:8px}
@@ -188,13 +184,6 @@ body.playing #screenGame.card{
     radial-gradient(ellipse at 65% 54%,rgba(247,169,70,0.20),transparent 48%),
     radial-gradient(ellipse at 50% 80%,rgba(88,39,15,0.18),transparent 62%);
   filter:blur(0.3px);
-}
-.foundation-ghost .ph-img{
-  position:relative; z-index:1; width:74%; height:74%; object-fit:contain;
-  opacity:0.09; filter:saturate(0.62) contrast(1.08) brightness(1.15) drop-shadow(0 3px 8px rgba(0,0,0,0.35));
-  mix-blend-mode:screen;
-  -webkit-mask-image:radial-gradient(ellipse at 50% 48%,#000 0 54%,rgba(0,0,0,0.55) 66%,transparent 82%);
-  mask-image:radial-gradient(ellipse at 50% 48%,#000 0 54%,rgba(0,0,0,0.55) 66%,transparent 82%);
 }
 .foundation-ghost .ph-sym{
   position:absolute; z-index:2; font-size:calc(var(--cw)*0.50); opacity:0.38;
@@ -358,6 +347,24 @@ body.playing #screenGame.card{
   text-align:center; box-shadow:0 6px 24px rgba(0,0,0,0.5); pointer-events:none; font-family:'Fredoka One',cursive;
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+.landscape-prompt{display:none}
+@media (orientation:portrait) and (max-width:900px){
+  body.playing{overflow:hidden}
+  body.playing #screenGame{filter:blur(2px); pointer-events:none}
+  body.playing .landscape-prompt{
+    position:fixed; inset:0; z-index:140; display:flex; align-items:center; justify-content:center;
+    padding:26px; background:linear-gradient(160deg,#0d0520,#1a0840);
+    text-align:center;
+  }
+  .landscape-box{
+    width:min(340px,100%); border:2px solid rgba(255,215,0,0.46); border-radius:18px;
+    padding:24px 20px; background:rgba(20,8,48,0.94); box-shadow:0 0 42px rgba(120,40,200,0.48);
+  }
+  .landscape-icon{font-size:42px; line-height:1; margin-bottom:12px}
+  .landscape-title{font-family:'Bangers',cursive; font-size:31px; letter-spacing:2px; color:var(--gold); margin-bottom:8px}
+  .landscape-text{font-size:13px; color:var(--muted); line-height:1.5}
+}
 .hidden{display:none!important}
 </style>
 </head>
@@ -394,8 +401,6 @@ body.playing #screenGame.card{
   <!-- MODES -->
   <div class="card hidden" id="screenModes">
     <button class="back-btn" id="backModes" onclick="show('screenMenu')">Retour</button>
-    <div class="sec-title" id="modesTitle">🃏 MODE DE JEU</div>
-    <div class="sec-sub" id="modesSub">Choisis ta pioche</div>
 
     <div class="mode-block">
       <button class="menu-btn btn-comp-green" onclick="startGame(1)">
@@ -447,6 +452,14 @@ body.playing #screenGame.card{
 
 <div class="toast" id="toast"></div>
 
+<div class="landscape-prompt" id="landscapePrompt" aria-hidden="true">
+  <div class="landscape-box">
+    <div class="landscape-icon">↻</div>
+    <div class="landscape-title" id="rotateTitle">Tourne ton écran</div>
+    <div class="landscape-text" id="rotateText">Le jeu se lance en paysage.</div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const tg = window.Telegram?.WebApp;
@@ -457,7 +470,6 @@ const BACKEND     = 'https://mubqtnqulpyehkgubhnh.supabase.co/functions/v1';
 const I18N = {
   fr:{
     tagline:'FRANCIS LE COQ', play:'JOUER', wallet:'CONNECT WALLET',
-    modesTitle:'🃏 MODE DE JEU', modesSub:'Choisis ta pioche',
     mode1:'PLAY - 1 CARTE', mode3:'PLAY - 3 CARTES',
     bestScore:'Meilleur score', bestTime:'Meilleur temps', none:'—',
     retour:'Retour', menu:'Menu', newGame:'Nouvelle', undo:'Annuler', hint:'Indice',
@@ -472,11 +484,11 @@ const I18N = {
     replay:'Rejouer', toModes:'Modes', toMenu:'Menu',
     noMove:'Aucun coup possible... pioche !', noHints:'Plus d\'indices !', drawTip:'💡 Pioche une carte !',
     hintsLeft:'Indices',
-    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !'
+    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !',
+    rotateTitle:'Tourne ton écran', rotateText:'Le jeu se lance en paysage.'
   },
   en:{
     tagline:'FRANCIS THE ROOSTER', play:'PLAY', wallet:'CONNECT WALLET',
-    modesTitle:'🃏 GAME MODE', modesSub:'Choose your draw',
     mode1:'PLAY - 1 CARD', mode3:'PLAY - 3 CARDS',
     bestScore:'Best score', bestTime:'Best time', none:'—',
     retour:'Back', menu:'Menu', newGame:'New', undo:'Undo', hint:'Hint',
@@ -491,7 +503,8 @@ const I18N = {
     replay:'Replay', toModes:'Modes', toMenu:'Menu',
     noMove:'No moves left... draw!', noHints:'No hints left!', drawTip:'💡 Draw a card!',
     hintsLeft:'Hints',
-    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!'
+    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!',
+    rotateTitle:'Rotate your screen', rotateText:'The game starts in landscape.'
   }
 };
 let lang = localStorage.getItem('cs_lang') || 'fr';
@@ -499,10 +512,10 @@ function t(k){return I18N[lang][k];}
 
 /* ---------- Suits & ranks ---------- */
 const SUITS = [
-  {sym:'♠', color:'black', img:'assets/pic.png'},      // 0 spades
-  {sym:'♥', color:'red',   img:'assets/coeur.png'},    // 1 hearts
-  {sym:'♦', color:'red',   img:'assets/carreau.png'},  // 2 diamonds
-  {sym:'♣', color:'black', img:'assets/trefles.png'}   // 3 clubs
+  {sym:'♠', color:'black'}, // 0 spades
+  {sym:'♥', color:'red'},   // 1 hearts
+  {sym:'♦', color:'red'},   // 2 diamonds
+  {sym:'♣', color:'black'}  // 3 clubs
 ];
 const RANKS = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const SUIT_KEYS = ['spades','hearts','diamonds','clubs'];
@@ -604,9 +617,30 @@ const SCREENS=['screenMenu','screenModes','screenGame'];
 function show(id){
   SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
   document.body.classList.toggle('playing', id==='screenGame');
+  if(id==='screenGame') enterLandscapeMode();
+  else releaseLandscapeMode();
   if(id==='screenModes'){ renderModeBests(); renderModeLocks(); }
   if(id!=='screenGame') stopTimer();
   window.scrollTo(0,0);
+}
+
+function enterLandscapeMode(){
+  try{ tg?.expand?.(); tg?.requestFullscreen?.(); }catch(e){}
+  const root=document.documentElement;
+  const fullscreen = (!document.fullscreenElement && root.requestFullscreen)
+    ? root.requestFullscreen({navigationUI:'hide'}).catch(()=>{})
+    : Promise.resolve();
+  fullscreen.then(()=>{
+    try{ screen.orientation?.lock?.('landscape').catch(()=>{}); }catch(e){}
+  });
+}
+
+function releaseLandscapeMode(){
+  try{ screen.orientation?.unlock?.(); }catch(e){}
+  try{ tg?.exitFullscreen?.(); }catch(e){}
+  if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
 }
 
 /* ---------- Language ---------- */
@@ -620,8 +654,6 @@ function applyLang(){
   document.getElementById('tagline').textContent=t('tagline');
   document.getElementById('lblPlay').textContent=t('play');
   document.getElementById('lblWallet').textContent=t('wallet');
-  document.getElementById('modesTitle').innerHTML=t('modesTitle');
-  document.getElementById('modesSub').textContent=t('modesSub');
   document.getElementById('lblMode1').textContent=t('mode1');
   document.getElementById('lblMode3').textContent=t('mode3');
   document.getElementById('lblBest1').textContent=t('bestScore');
@@ -632,6 +664,8 @@ function applyLang(){
   document.getElementById('backGame').textContent=t('menu');
   document.getElementById('lblNew').textContent=t('newGame');
   document.getElementById('lblUndo').textContent=t('undo');
+  document.getElementById('rotateTitle').textContent=t('rotateTitle');
+  document.getElementById('rotateText').textContent=t('rotateText');
   renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn();
 }
 
@@ -916,7 +950,7 @@ function render(){
       const selCls=(sel && sel.type==='found' && sel.suit===s)?'sel':'';
       html+=`<div class="pile foundation" data-pile="found" data-suit="${s}">${cardHTML(card,`data-loc="found" data-suit="${s}"`,0,selCls)}</div>`;
     } else {
-      html+=`<div class="pile foundation" data-pile="found" data-suit="${s}"><span class="foundation-ghost ${SUITS[s].color}"><img class="ph-img" src="${SUITS[s].img}" alt=""><span class="ph-sym">${SUITS[s].sym}</span></span></div>`;
+      html+=`<div class="pile foundation" data-pile="found" data-suit="${s}"><span class="foundation-ghost ${SUITS[s].color}"><span class="ph-sym">${SUITS[s].sym}</span></span></div>`;
     }
   }
   html+='</div>';

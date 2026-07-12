@@ -39,5 +39,6 @@ Win all four foundations → a **festive win screen** with Francis and fireworks
 
 ## Assets (`assets/`)
 
-Rooster artwork by suit (`pic`, `coeur`, `carreau`, `trefles`), face cards
-(`roi`, `reine`, `vallet`), the mascot `francis`, the sad `triste` and the festive `festif`.
+Integrated card artwork lives in `assets/card-art/` with one PNG per card. The root
+`assets/` folder keeps only the interface artwork still used by the game: `francis`,
+`triste` and `festif`.
