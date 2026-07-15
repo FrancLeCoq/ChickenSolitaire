@@ -201,7 +201,7 @@ body.playing #screenGame.card{
   width:var(--cw); height:var(--ch); border-radius:calc(var(--cw)*0.12);
   position:absolute; left:0; top:0;
   box-shadow:0 4px 10px rgba(0,0,0,0.42),0 1px 0 rgba(255,255,255,0.78) inset;
-  overflow:hidden; touch-action:manipulation; cursor:pointer;
+  overflow:hidden; touch-action:none; cursor:pointer;
   background:
     radial-gradient(ellipse at 50% 42%,rgba(255,232,146,0.24),transparent 46%),
     linear-gradient(160deg,#fffdf7 0%,#f8f1df 56%,#eadcc1 100%);
@@ -265,6 +265,12 @@ body.playing #screenGame.card{
 .card-el.red{color:#d81f2a}
 .card-el.black{color:#141422}
 .card-el.sel{outline:3px solid var(--gold); outline-offset:-1px; box-shadow:0 0 14px rgba(255,215,0,0.8); z-index:900!important}
+.card-el.drag-origin{opacity:.34}
+.drag-ghost{
+  position:fixed; left:0; top:0; z-index:1000; pointer-events:none;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,0.46));
+}
+.drag-ghost .card-el{cursor:grabbing}
 .card-el.pop{animation:cardpop .18s ease}
 @keyframes cardpop{from{transform:scale(0.9)}to{transform:scale(1)}}
 .hint-glow{animation:hintg 1.5s ease}
@@ -817,9 +823,147 @@ function doDraw(){
   G.moves++; startTimer(); sel=null; render(); updateHUD();
 }
 
-/* ---------- Tap handling (delegated) ---------- */
+/* ---------- Tap / drag handling (delegated) ---------- */
 let lastTap={time:0,key:''};
+let dragState=null, suppressClick=false;
+function suppressNextClick(){
+  suppressClick=true;
+  setTimeout(()=>{ suppressClick=false; },350);
+}
+
+function locFromEl(el){
+  const loc=el.dataset.loc;
+  if(loc==='waste') return {type:'waste'};
+  if(loc==='found') return {type:'found',suit:+el.dataset.suit};
+  if(loc==='tab'){
+    const col=+el.dataset.col, idx=+el.dataset.idx;
+    const card=G?.tab?.[col]?.[idx];
+    if(!card||!card.up)return null;
+    return {type:'tab',col,idx};
+  }
+  return null;
+}
+function canSelectLoc(loc){
+  if(!loc)return false;
+  if(loc.type==='waste')return !!G.waste.length;
+  if(loc.type==='found')return !!G.found[loc.suit].length;
+  if(loc.type==='tab'){
+    const col=G.tab[loc.col];
+    const run=col.slice(loc.idx);
+    if(!run.length || !run[0].up)return false;
+    return isValidSeq(run) || loc.idx===col.length-1;
+  }
+  return false;
+}
+function cardsForLoc(loc){
+  if(!loc)return [];
+  if(loc.type==='waste')return G.waste.length?[G.waste[G.waste.length-1]]:[];
+  if(loc.type==='found')return G.found[loc.suit].length?[G.found[loc.suit][G.found[loc.suit].length-1]]:[];
+  if(loc.type==='tab')return G.tab[loc.col].slice(loc.idx);
+  return [];
+}
+function dragElsForLoc(loc){
+  if(loc.type==='waste')return [...board.querySelectorAll('[data-loc="waste"]')].slice(-1);
+  if(loc.type==='found')return [...board.querySelectorAll(`[data-loc="found"][data-suit="${loc.suit}"]`)].slice(-1);
+  if(loc.type==='tab'){
+    return [...board.querySelectorAll(`[data-loc="tab"][data-col="${loc.col}"]`)]
+      .filter(el=>+el.dataset.idx>=loc.idx)
+      .sort((a,b)=>+a.dataset.idx-+b.dataset.idx);
+  }
+  return [];
+}
+function startCardDrag(state,e){
+  const els=dragElsForLoc(state.loc);
+  if(!els.length)return false;
+  const base=els[0].getBoundingClientRect();
+  const ghost=document.createElement('div');
+  ghost.className='drag-ghost';
+  ghost.style.width=base.width+'px';
+  ghost.style.height=base.height+'px';
+  els.forEach(el=>{
+    const r=el.getBoundingClientRect();
+    const clone=el.cloneNode(true);
+    clone.classList.remove('sel','hint-glow','drag-origin');
+    clone.removeAttribute('data-loc');
+    clone.removeAttribute('data-pile');
+    clone.style.position='absolute';
+    clone.style.left=(r.left-base.left)+'px';
+    clone.style.top=(r.top-base.top)+'px';
+    clone.style.width=r.width+'px';
+    clone.style.height=r.height+'px';
+    ghost.appendChild(clone);
+    el.classList.add('drag-origin');
+  });
+  document.body.appendChild(ghost);
+  state.dragging=true;
+  state.ghost=ghost;
+  state.originEls=els;
+  state.offsetX=e.clientX-base.left;
+  state.offsetY=e.clientY-base.top;
+  moveCardDrag(e);
+  return true;
+}
+function moveCardDrag(e){
+  if(!dragState?.ghost)return;
+  dragState.ghost.style.transform=`translate(${e.clientX-dragState.offsetX}px,${e.clientY-dragState.offsetY}px)`;
+}
+function cleanupCardDrag(){
+  if(!dragState)return;
+  try{ board.releasePointerCapture(dragState.pointerId); }catch(e){}
+  dragState.ghost?.remove();
+  dragState.originEls?.forEach(el=>el.classList.remove('drag-origin'));
+  dragState=null;
+}
+function dropTargetAt(x,y){
+  const el=document.elementFromPoint(x,y)?.closest('[data-pile],[data-loc]');
+  if(!el||!board.contains(el))return null;
+  if(el.dataset.loc==='found' || el.dataset.pile==='found')return {type:'found',suit:+el.dataset.suit};
+  if(el.dataset.loc==='tab')return {type:'tab',col:+el.dataset.col};
+  if(el.dataset.pile==='tab')return {type:'tab',col:+el.dataset.col};
+  return null;
+}
+function tryDraggedMove(source,dest){
+  if(!dest)return false;
+  const cards=cardsForLoc(source);
+  if(dest.type==='found' && canFound(cards,dest.suit)){ sel=source; doMove(dest); return true; }
+  if(dest.type==='tab' && canTab(cards,dest.col)){ sel=source; doMove(dest); return true; }
+  return false;
+}
+board.addEventListener('pointerdown',e=>{
+  if(!G || (e.button!=null && e.button!==0))return;
+  const el=e.target.closest('[data-loc]');
+  if(!el||!board.contains(el))return;
+  const loc=locFromEl(el);
+  if(!canSelectLoc(loc))return;
+  dragState={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,loc,sourceEl:el,dragging:false};
+  try{ board.setPointerCapture(e.pointerId); }catch(err){}
+});
+window.addEventListener('pointermove',e=>{
+  if(!dragState)return;
+  const dx=e.clientX-dragState.startX, dy=e.clientY-dragState.startY;
+  if(!dragState.dragging && Math.hypot(dx,dy)>8){
+    sel=null;
+    if(!startCardDrag(dragState,e)){ cleanupCardDrag(); return; }
+  }
+  if(dragState?.dragging){ e.preventDefault(); moveCardDrag(e); }
+});
+function finishPointerDrag(e){
+  if(!dragState)return;
+  const state=dragState;
+  if(state.dragging){
+    suppressNextClick();
+    const dest=dropTargetAt(e.clientX,e.clientY);
+    cleanupCardDrag();
+    if(!tryDraggedMove(state.loc,dest)){ sel=null; render(); }
+    return;
+  }
+  cleanupCardDrag();
+}
+window.addEventListener('pointerup',finishPointerDrag);
+window.addEventListener('pointercancel',()=>{ if(dragState?.dragging){ suppressNextClick(); sel=null; render(); } cleanupCardDrag(); });
+
 board.addEventListener('click',e=>{
+  if(suppressClick){ suppressClick=false; e.preventDefault(); return; }
   const el=e.target.closest('[data-pile],[data-loc]');
   if(!el)return;
   handleTap(el);
@@ -1043,9 +1187,17 @@ function useHint(){
   if(G.hintsLeft<=0){ toast(t('noHints')); return; }
   const h=findHint();
   if(!h){ toast(t('noMove')); return; }
-  G.hintsLeft--; updateHintBtn();
-  if(h.from.type==='stock'){ toast(t('drawTip')); const se=board.querySelector('[data-pile="stock"]'); if(se){se.classList.add('hint-glow'); setTimeout(()=>se.classList.remove('hint-glow'),1600);} return; }
+  if(h.from.type==='stock'){
+    const se=board.querySelector('[data-pile="stock"]');
+    if(!se){ toast(t('noMove')); return; }
+    G.hintsLeft--; updateHintBtn();
+    toast(t('drawTip'));
+    se.classList.add('hint-glow'); setTimeout(()=>se.classList.remove('hint-glow'),1600);
+    return;
+  }
   const fe=elForLoc(h.from), te=elForLoc(h.to);
+  if(!fe || !te){ toast(t('noMove')); return; }
+  G.hintsLeft--; updateHintBtn();
   if(fe){ fe.classList.add('hint-glow'); setTimeout(()=>fe.classList.remove('hint-glow'),1600); }
   if(te && te!==fe){ te.classList.add('hint-glow'); setTimeout(()=>te.classList.remove('hint-glow'),1600); }
 }
