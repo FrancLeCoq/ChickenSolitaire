@@ -365,6 +365,23 @@ body.playing #screenGame.card{
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
+.landscape-prompt{display:none}
+@media (orientation:portrait) and (max-width:900px){
+  body.playing{overflow:hidden}
+  body.playing #screenGame{filter:blur(2px); pointer-events:none}
+  body.playing .landscape-prompt{
+    position:fixed; inset:0; z-index:140; display:flex; align-items:center; justify-content:center;
+    padding:26px; background:linear-gradient(160deg,#0d0520,#1a0840);
+    text-align:center;
+  }
+  .landscape-box{
+    width:min(340px,100%); border:2px solid rgba(255,215,0,0.46); border-radius:18px;
+    padding:24px 20px; background:rgba(20,8,48,0.94); box-shadow:0 0 42px rgba(120,40,200,0.48);
+  }
+  .landscape-icon{font-size:42px; line-height:1; margin-bottom:12px}
+  .landscape-title{font-family:'Bangers',cursive; font-size:31px; letter-spacing:2px; color:var(--gold); margin-bottom:8px}
+  .landscape-text{font-size:13px; color:var(--muted); line-height:1.5}
+}
 .hidden{display:none!important}
 </style>
 </head>
@@ -454,6 +471,14 @@ body.playing #screenGame.card{
 
 <div class="toast" id="toast"></div>
 
+<div class="landscape-prompt" id="landscapePrompt" aria-hidden="true">
+  <div class="landscape-box">
+    <div class="landscape-icon">↻</div>
+    <div class="landscape-title" id="rotateTitle">Tourne ton écran</div>
+    <div class="landscape-text" id="rotateText">Le jeu se lance en paysage.</div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const tg = window.Telegram?.WebApp;
@@ -479,7 +504,8 @@ const I18N = {
     replay:'Rejouer', toModes:'Modes', toMenu:'Menu',
     noMove:'Aucun coup possible... pioche !', noHints:'Plus d\'indices !', drawTip:'💡 Pioche une carte !',
     hintsLeft:'Indices',
-    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !'
+    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !',
+    rotateTitle:'Tourne ton écran', rotateText:'Le jeu se lance en paysage.'
   },
   en:{
     tagline:'FRANCIS THE ROOSTER', play:'PLAY', wallet:'CONNECT WALLET',
@@ -498,7 +524,8 @@ const I18N = {
     replay:'Replay', toModes:'Modes', toMenu:'Menu',
     noMove:'No moves left... draw!', noHints:'No hints left!', drawTip:'💡 Draw a card!',
     hintsLeft:'Hints',
-    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!'
+    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!',
+    rotateTitle:'Rotate your screen', rotateText:'The game starts in landscape.'
   }
 };
 let lang = localStorage.getItem('cs_lang') || 'fr';
@@ -611,10 +638,30 @@ const SCREENS=['screenMenu','screenModes','screenGame'];
 function show(id){
   SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
   document.body.classList.toggle('playing', id==='screenGame');
-  if(id==='screenGame'){ try{ tg?.expand?.(); }catch(e){} }
+  if(id==='screenGame') enterLandscapeMode();
+  else releaseLandscapeMode();
   if(id==='screenModes'){ renderModeBests(); renderModeLocks(); }
   if(id!=='screenGame') stopTimer();
   window.scrollTo(0,0);
+}
+
+function enterLandscapeMode(){
+  try{ tg?.expand?.(); tg?.requestFullscreen?.(); }catch(e){}
+  const root=document.documentElement;
+  const fullscreen = (!document.fullscreenElement && root.requestFullscreen)
+    ? root.requestFullscreen({navigationUI:'hide'}).catch(()=>{})
+    : Promise.resolve();
+  fullscreen.then(()=>{
+    try{ screen.orientation?.lock?.('landscape').catch(()=>{}); }catch(e){}
+  });
+}
+
+function releaseLandscapeMode(){
+  try{ screen.orientation?.unlock?.(); }catch(e){}
+  try{ tg?.exitFullscreen?.(); }catch(e){}
+  if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
 }
 
 /* ---------- Language ---------- */
@@ -638,6 +685,8 @@ function applyLang(){
   document.getElementById('backGame').textContent=t('menu');
   document.getElementById('lblNew').textContent=t('newGame');
   document.getElementById('lblUndo').textContent=t('undo');
+  document.getElementById('rotateTitle').textContent=t('rotateTitle');
+  document.getElementById('rotateText').textContent=t('rotateText');
   renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn();
 }
 
