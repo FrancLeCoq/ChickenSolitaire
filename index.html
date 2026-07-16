@@ -318,14 +318,25 @@ body.playing #screenGame.card{
 }
 .modal .mbtn:active{transform:scale(0.96)}
 
-/* WIN OVERLAY (Festif + fireworks) */
+/* WIN OVERLAY (card cascade + fireworks -> Bravo box) */
 .win-overlay{position:fixed; inset:0; z-index:80; display:none; overflow:hidden;
   background:radial-gradient(circle at 50% 35%,#2a0d5c,#0a0418 75%);}
 .win-overlay.show{display:block; animation:fadein .3s}
 #fw{position:absolute; inset:0; width:100%; height:100%; z-index:1}
-.win-content{position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
-  align-items:center; justify-content:flex-start; padding:14px 18px calc(18px + env(safe-area-inset-bottom));
+#cascade{position:absolute; inset:0; width:100%; height:100%; z-index:2}
+.win-skip{position:absolute; z-index:3; bottom:calc(24px + env(safe-area-inset-bottom)); left:50%;
+  transform:translateX(-50%); color:#fff; font-family:'Fredoka One',cursive; font-size:13px;
+  background:rgba(0,0,0,0.42); padding:8px 18px; border-radius:999px; border:1px solid rgba(255,215,0,0.45);
+  box-shadow:0 4px 18px rgba(0,0,0,0.4); animation:skippulse 1.4s ease-in-out infinite; pointer-events:none}
+@keyframes skippulse{0%,100%{opacity:.55}50%{opacity:1}}
+.win-content{position:absolute; inset:0; z-index:4; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:14px 18px calc(18px + env(safe-area-inset-bottom));
   overflow-y:auto;}
+.bravo-box{width:min(360px,92%); margin:auto; text-align:center;
+  display:flex; flex-direction:column; align-items:center;
+  background:linear-gradient(145deg,rgba(13,5,32,0.95),rgba(30,10,65,0.95));
+  border:2px solid rgba(255,215,0,0.5); border-radius:24px; padding:22px 20px;
+  box-shadow:0 0 60px rgba(120,40,200,0.6); animation:pop .4s cubic-bezier(.2,1.4,.5,1)}
 .win-title{font-family:'Bangers',cursive; font-size:44px; letter-spacing:3px; color:var(--gold);
   text-shadow:0 0 26px rgba(255,215,0,0.8),0 4px 0 rgba(0,0,0,0.35); text-align:center; margin-top:8px;
   animation:wtpop .6s cubic-bezier(.2,1.5,.5,1)}
@@ -354,23 +365,6 @@ body.playing #screenGame.card{
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
-.landscape-prompt{display:none}
-@media (orientation:portrait) and (max-width:900px){
-  body.playing{overflow:hidden}
-  body.playing #screenGame{filter:blur(2px); pointer-events:none}
-  body.playing .landscape-prompt{
-    position:fixed; inset:0; z-index:140; display:flex; align-items:center; justify-content:center;
-    padding:26px; background:linear-gradient(160deg,#0d0520,#1a0840);
-    text-align:center;
-  }
-  .landscape-box{
-    width:min(340px,100%); border:2px solid rgba(255,215,0,0.46); border-radius:18px;
-    padding:24px 20px; background:rgba(20,8,48,0.94); box-shadow:0 0 42px rgba(120,40,200,0.48);
-  }
-  .landscape-icon{font-size:42px; line-height:1; margin-bottom:12px}
-  .landscape-title{font-family:'Bangers',cursive; font-size:31px; letter-spacing:2px; color:var(--gold); margin-bottom:8px}
-  .landscape-text{font-size:13px; color:var(--muted); line-height:1.5}
-}
 .hidden{display:none!important}
 </style>
 </head>
@@ -453,18 +447,12 @@ body.playing #screenGame.card{
 <!-- WIN -->
 <div class="win-overlay" id="winOverlay">
   <canvas id="fw"></canvas>
-  <div class="win-content" id="winContent"></div>
+  <canvas id="cascade"></canvas>
+  <div class="win-skip hidden" id="winSkip"></div>
+  <div class="win-content hidden" id="winContent"></div>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<div class="landscape-prompt" id="landscapePrompt" aria-hidden="true">
-  <div class="landscape-box">
-    <div class="landscape-icon">↻</div>
-    <div class="landscape-title" id="rotateTitle">Tourne ton écran</div>
-    <div class="landscape-text" id="rotateText">Le jeu se lance en paysage.</div>
-  </div>
-</div>
 
 <script>
 'use strict';
@@ -487,11 +475,11 @@ const I18N = {
     btnConnect:'👛 Connecter le wallet', btnClose:'Fermer',
     scoreLbl:'SCORE', timeLbl:'TEMPS', movesLbl:'COUPS',
     winTitle:'🎉 GAGNÉ ! 🎉', winText:'Francis a rangé toutes les cartes !',
+    bravo:'🎉 BRAVO ! 🎉', tapContinue:'Tape pour continuer',
     replay:'Rejouer', toModes:'Modes', toMenu:'Menu',
     noMove:'Aucun coup possible... pioche !', noHints:'Plus d\'indices !', drawTip:'💡 Pioche une carte !',
     hintsLeft:'Indices',
-    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !',
-    rotateTitle:'Tourne ton écran', rotateText:'Le jeu se lance en paysage.'
+    noMoveModal:'PLUS DE COUPS', noMoveText:'Aucun mouvement possible. Recommence une partie !'
   },
   en:{
     tagline:'FRANCIS THE ROOSTER', play:'PLAY', wallet:'CONNECT WALLET',
@@ -506,11 +494,11 @@ const I18N = {
     btnConnect:'👛 Connect wallet', btnClose:'Close',
     scoreLbl:'SCORE', timeLbl:'TIME', movesLbl:'MOVES',
     winTitle:'🎉 YOU WIN! 🎉', winText:'Francis sorted every card!',
+    bravo:'🎉 BRAVO! 🎉', tapContinue:'Tap to continue',
     replay:'Replay', toModes:'Modes', toMenu:'Menu',
     noMove:'No moves left... draw!', noHints:'No hints left!', drawTip:'💡 Draw a card!',
     hintsLeft:'Hints',
-    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!',
-    rotateTitle:'Rotate your screen', rotateText:'The game starts in landscape.'
+    noMoveModal:'NO MORE MOVES', noMoveText:'No possible move. Start a new game!'
   }
 };
 let lang = localStorage.getItem('cs_lang') || 'fr';
@@ -623,30 +611,10 @@ const SCREENS=['screenMenu','screenModes','screenGame'];
 function show(id){
   SCREENS.forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
   document.body.classList.toggle('playing', id==='screenGame');
-  if(id==='screenGame') enterLandscapeMode();
-  else releaseLandscapeMode();
+  if(id==='screenGame'){ try{ tg?.expand?.(); }catch(e){} }
   if(id==='screenModes'){ renderModeBests(); renderModeLocks(); }
   if(id!=='screenGame') stopTimer();
   window.scrollTo(0,0);
-}
-
-function enterLandscapeMode(){
-  try{ tg?.expand?.(); tg?.requestFullscreen?.(); }catch(e){}
-  const root=document.documentElement;
-  const fullscreen = (!document.fullscreenElement && root.requestFullscreen)
-    ? root.requestFullscreen({navigationUI:'hide'}).catch(()=>{})
-    : Promise.resolve();
-  fullscreen.then(()=>{
-    try{ screen.orientation?.lock?.('landscape').catch(()=>{}); }catch(e){}
-  });
-}
-
-function releaseLandscapeMode(){
-  try{ screen.orientation?.unlock?.(); }catch(e){}
-  try{ tg?.exitFullscreen?.(); }catch(e){}
-  if(document.fullscreenElement && document.exitFullscreen){
-    document.exitFullscreen().catch(()=>{});
-  }
 }
 
 /* ---------- Language ---------- */
@@ -670,8 +638,6 @@ function applyLang(){
   document.getElementById('backGame').textContent=t('menu');
   document.getElementById('lblNew').textContent=t('newGame');
   document.getElementById('lblUndo').textContent=t('undo');
-  document.getElementById('rotateTitle').textContent=t('rotateTitle');
-  document.getElementById('rotateText').textContent=t('rotateText');
   renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn();
 }
 
@@ -1261,26 +1227,136 @@ function fwStart(){
 function fwStop(){ fwRunning=false; if(fwSpawnTimer)clearTimeout(fwSpawnTimer); if(fwRaf)cancelAnimationFrame(fwRaf); fwParticles=[]; fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height); }
 window.addEventListener('resize',()=>{ if(fwRunning)fwResize(); if(G && !document.getElementById('screenGame').classList.contains('hidden'))render(); });
 
-function showWin(){
-  const mode=G.draw===1?'1':'3';
-  const c=document.getElementById('winContent');
-  c.innerHTML=`
-    <div class="win-title">${t('winTitle')}</div>
-    <img class="win-img" src="assets/festif.jpg" alt="">
-    <div class="win-stats">
-      <div class="ws s"><div class="l">${t('scoreLbl')}</div><div class="v">${G.score}</div></div>
-      <div class="ws t"><div class="l">${t('timeLbl')}</div><div class="v">${fmtTime(G.elapsed)}</div></div>
-      <div class="ws r"><div class="l">${t('movesLbl')}</div><div class="v">${G.moves}</div></div>
-    </div>
-    <div class="win-btns">
-      <button class="mbtn btn-comp-green" onclick="hideWin();startGame(${G.draw})">${t('replay')}</button>
-      <button class="mbtn btn-wallet" onclick="hideWin();show('screenModes')">${t('toModes')}</button>
-      <button class="mbtn btn-purple" onclick="hideWin();show('screenMenu')">${t('toMenu')}</button>
-    </div>`;
-  document.getElementById('winOverlay').classList.add('show');
-  fwStart();
+/* ---------- Windows-style bouncing card cascade ---------- */
+const cascadeCanvas=document.getElementById('cascade');
+const ccx=cascadeCanvas.getContext('2d');
+let ccCards=[], ccQueue=[], ccRunning=false, ccRaf=null, ccReleaseIdx=0, ccLastRelease=0;
+let ccCardW=60, ccCardH=84;
+const ccImgCache={};
+function cardArtSrc(card){ return `assets/card-art/${INTEGRATED_RANKS[card.r]}-${SUIT_KEYS[card.s]}.png`; }
+function getCardImg(card){
+  const src=cardArtSrc(card);
+  if(!ccImgCache[src]){ const im=new Image(); im.src=src; ccImgCache[src]=im; }
+  return ccImgCache[src];
 }
-function hideWin(){ fwStop(); document.getElementById('winOverlay').classList.remove('show'); }
+function cascadeResize(){ cascadeCanvas.width=window.innerWidth; cascadeCanvas.height=window.innerHeight; }
+function buildCascadeQueue(){
+  const starts=[];
+  for(let s=0;s<4;s++){
+    const el=board.querySelector(`[data-pile="found"][data-suit="${s}"]`);
+    if(el){ const r=el.getBoundingClientRect(); starts[s]={x:r.left,y:r.top,w:r.width,h:r.height}; }
+    else starts[s]={x:window.innerWidth*(0.4+s*0.07),y:70,w:ccCardW,h:ccCardH};
+  }
+  ccCardW=Math.max(46,Math.round(starts[0].w||ccCardW));
+  ccCardH=Math.round(ccCardW*1.4);
+  const cols=G.found.map(f=>f.slice());
+  const queue=[]; let added=true;
+  while(added){
+    added=false;
+    for(let s=0;s<4;s++){
+      if(cols[s].length){
+        const card=cols[s].pop();
+        queue.push({card, img:getCardImg(card), sx:starts[s].x, sy:starts[s].y});
+        added=true;
+      }
+    }
+  }
+  return queue;
+}
+function launchCascadeCard(item){
+  const dir=Math.random()<0.5?-1:1;
+  ccCards.push({
+    img:item.img, x:item.sx, y:item.sy,
+    vx:dir*(2.2+Math.random()*4.6),
+    vy:-(3+Math.random()*5.5),
+    g:0.34+Math.random()*0.12,
+    bounce:0.74+Math.random()*0.12,
+    done:false
+  });
+}
+function cascadeLoop(now){
+  if(!ccRunning)return;
+  const W=cascadeCanvas.width, H=cascadeCanvas.height;
+  if(ccReleaseIdx<ccQueue.length && now-ccLastRelease>85){
+    launchCascadeCard(ccQueue[ccReleaseIdx++]);
+    ccLastRelease=now;
+  }
+  for(const c of ccCards){
+    if(c.done)continue;
+    c.vy+=c.g; c.x+=c.vx; c.y+=c.vy;
+    if(c.y+ccCardH>=H){ c.y=H-ccCardH; c.vy=-Math.abs(c.vy)*c.bounce; if(Math.abs(c.vy)<2){ c.vy*=0.5; } }
+    if(c.x<-ccCardW*1.6 || c.x>W+ccCardW*1.6){ c.done=true; continue; }
+    if(c.img.complete && c.img.naturalWidth){
+      ccx.drawImage(c.img, c.x, c.y, ccCardW, ccCardH);
+    } else {
+      ccx.fillStyle='#fdf6e3'; ccx.fillRect(c.x, c.y, ccCardW, ccCardH);
+    }
+  }
+  ccRaf=requestAnimationFrame(cascadeLoop);
+}
+function cascadeStart(){
+  cascadeResize();
+  ccx.clearRect(0,0,cascadeCanvas.width,cascadeCanvas.height);
+  ccCards=[]; ccQueue=buildCascadeQueue(); ccReleaseIdx=0; ccLastRelease=0; ccRunning=true;
+  ccRaf=requestAnimationFrame(cascadeLoop);
+}
+function cascadeStop(){ ccRunning=false; if(ccRaf){cancelAnimationFrame(ccRaf); ccRaf=null;} }
+function cascadeClear(){ cascadeStop(); ccCards=[]; ccQueue=[]; ccx.clearRect(0,0,cascadeCanvas.width,cascadeCanvas.height); }
+
+/* ---------- Win sequence: cascade + fireworks (10s) -> Bravo box ---------- */
+const WIN_CASCADE_MS=10000;
+let winTimer=null, winSkipHandler=null, winSkipArm=null;
+function showWin(){
+  const overlay=document.getElementById('winOverlay');
+  const content=document.getElementById('winContent');
+  const skip=document.getElementById('winSkip');
+  content.classList.add('hidden'); content.innerHTML='';
+  overlay.classList.add('show');
+  cascadeStart();   // read foundation positions, launch bouncing cards
+  fwStart();        // fireworks at the same time
+  skip.textContent=t('tapContinue'); skip.classList.add('hidden');
+  winSkipHandler=()=>showBravo();
+  winSkipArm=setTimeout(()=>{
+    if(!ccRunning && !winTimer)return;
+    skip.classList.remove('hidden');
+    overlay.addEventListener('click', winSkipHandler, {once:true});
+  },1500);
+  winTimer=setTimeout(showBravo, WIN_CASCADE_MS);
+}
+function showBravo(){
+  if(winTimer){ clearTimeout(winTimer); winTimer=null; }
+  if(winSkipArm){ clearTimeout(winSkipArm); winSkipArm=null; }
+  const overlay=document.getElementById('winOverlay');
+  if(winSkipHandler){ overlay.removeEventListener('click', winSkipHandler); winSkipHandler=null; }
+  cascadeStop();                                   // freeze the card trails behind the box
+  document.getElementById('winSkip').classList.add('hidden');
+  const content=document.getElementById('winContent');
+  content.innerHTML=`
+    <div class="bravo-box">
+      <div class="win-title">${t('bravo')}</div>
+      <img class="win-img" src="assets/festif.jpg" alt="">
+      <div class="win-stats">
+        <div class="ws s"><div class="l">${t('scoreLbl')}</div><div class="v">${G.score}</div></div>
+        <div class="ws t"><div class="l">${t('timeLbl')}</div><div class="v">${fmtTime(G.elapsed)}</div></div>
+        <div class="ws r"><div class="l">${t('movesLbl')}</div><div class="v">${G.moves}</div></div>
+      </div>
+      <div class="win-btns">
+        <button class="mbtn btn-comp-green" onclick="hideWin();startGame(${G.draw})">${t('replay')}</button>
+        <button class="mbtn btn-purple" onclick="hideWin();show('screenMenu')">${t('toMenu')}</button>
+      </div>
+    </div>`;
+  content.classList.remove('hidden');
+}
+function hideWin(){
+  if(winTimer){ clearTimeout(winTimer); winTimer=null; }
+  if(winSkipArm){ clearTimeout(winSkipArm); winSkipArm=null; }
+  const overlay=document.getElementById('winOverlay');
+  if(winSkipHandler){ overlay.removeEventListener('click', winSkipHandler); winSkipHandler=null; }
+  fwStop(); cascadeClear();
+  document.getElementById('winSkip').classList.add('hidden');
+  document.getElementById('winContent').classList.add('hidden');
+  overlay.classList.remove('show');
+}
 
 /* ---------- Dev helpers (harmless) ---------- */
 window.__dev={
