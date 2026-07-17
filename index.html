@@ -261,7 +261,9 @@ body.playing #screenGame.card{
 .card-el .integrated-card-img{
   position:absolute; inset:0; z-index:1; width:100%; height:100%;
   display:block; object-fit:cover; border-radius:inherit;
+  pointer-events:none; -webkit-user-drag:none; user-drag:none;
 }
+.card-el img{pointer-events:none; -webkit-user-drag:none; user-drag:none}
 .card-el.red{color:#d81f2a}
 .card-el.black{color:#141422}
 .card-el.sel{outline:3px solid var(--gold); outline-offset:-1px; box-shadow:0 0 14px rgba(255,215,0,0.8); z-index:900!important}
@@ -273,10 +275,10 @@ body.playing #screenGame.card{
 .drag-ghost .card-el{cursor:grabbing}
 .card-el.pop{animation:cardpop .18s ease}
 @keyframes cardpop{from{transform:scale(0.9)}to{transform:scale(1)}}
-.hint-glow{animation:hintg 1.5s ease}
-@keyframes hintg{0%,100%{box-shadow:0 2px 4px rgba(0,0,0,.45)}30%,70%{box-shadow:0 0 0 3px #7CFC00,0 0 18px #7CFC00}}
-.pile.hint-glow{animation:hintgp 1.5s ease}
-@keyframes hintgp{0%,100%{box-shadow:none}30%,70%{box-shadow:0 0 0 3px #7CFC00,0 0 18px #7CFC00}}
+.hint-glow{animation:hintg 1.7s ease; z-index:950!important}
+@keyframes hintg{0%,100%{box-shadow:0 2px 4px rgba(0,0,0,.45); transform:scale(1)}18%,58%{box-shadow:0 0 0 4px #7CFC00,0 0 26px 5px rgba(124,252,0,0.85); transform:scale(1.05)}}
+.pile.hint-glow{animation:hintgp 1.7s ease; z-index:950!important}
+@keyframes hintgp{0%,100%{box-shadow:none}18%,58%{box-shadow:0 0 0 4px #7CFC00,0 0 26px 5px rgba(124,252,0,0.85)}}
 
 /* CONTROL BAR */
 .ctrl-bar{display:flex; gap:8px; justify-content:center; width:100%; max-width:560px; margin:12px auto 0; flex-wrap:wrap}
@@ -937,6 +939,36 @@ function dropTargetAt(x,y){
   if(el.dataset.pile==='tab')return {type:'tab',col:+el.dataset.col};
   return null;
 }
+/* Choose the LEGAL destination whose slot overlaps the dragged card the most.
+   This uses the card's own position (the ghost) rather than the raw cursor, so
+   aligning the card with a pile is enough to drop it there. */
+function dropTargetByOverlap(state){
+  const lead=state.ghost?.firstChild?.getBoundingClientRect();
+  if(!lead)return null;
+  const cardArea=Math.max(1,(lead.right-lead.left)*(lead.bottom-lead.top));
+  const cards=cardsForLoc(state.loc);
+  const cands=[];
+  for(let s=0;s<4;s++){
+    if(canFound(cards,s)){ const el=board.querySelector(`[data-pile="found"][data-suit="${s}"]`); if(el)cands.push({dest:{type:'found',suit:s},r:el.getBoundingClientRect()}); }
+  }
+  for(let c=0;c<7;c++){
+    if(state.loc.type==='tab' && state.loc.col===c)continue;
+    if(canTab(cards,c)){
+      const col=G.tab[c]; let el=null;
+      if(col.length) el=board.querySelector(`[data-loc="tab"][data-col="${c}"][data-idx="${col.length-1}"]`);
+      if(!el) el=board.querySelector(`.col[data-col="${c}"]`);
+      if(el)cands.push({dest:{type:'tab',col:c},r:el.getBoundingClientRect()});
+    }
+  }
+  let best=null,bestA=0;
+  for(const cand of cands){
+    const ox=Math.max(0,Math.min(lead.right,cand.r.right)-Math.max(lead.left,cand.r.left));
+    const oy=Math.max(0,Math.min(lead.bottom,cand.r.bottom)-Math.max(lead.top,cand.r.top));
+    const a=ox*oy;
+    if(a>bestA){ bestA=a; best=cand.dest; }
+  }
+  return (best && bestA>cardArea*0.08)?best:null;
+}
 function tryDraggedMove(source,dest){
   if(!dest)return false;
   const cards=cardsForLoc(source);
@@ -967,7 +999,7 @@ function finishPointerDrag(e){
   const state=dragState;
   if(state.dragging){
     suppressNextClick();
-    const dest=dropTargetAt(e.clientX,e.clientY);
+    const dest=dropTargetByOverlap(state) || dropTargetAt(e.clientX,e.clientY);
     cleanupCardDrag();
     if(!tryDraggedMove(state.loc,dest)){ sel=null; render(); }
     return;
@@ -1196,25 +1228,28 @@ function elForLoc(loc){
   }
   return null;
 }
+function glowHint(el){
+  if(!el)return;
+  el.classList.add('hint-glow');
+  setTimeout(()=>el.classList.remove('hint-glow'),1700);
+}
 function useHint(){
   if(!isHolder){ showLockModal('hint'); return; }
   if(!G)return;
   if(G.hintsLeft<=0){ toast(t('noHints')); return; }
   const h=findHint();
-  if(!h){ toast(t('noMove')); return; }
-  if(h.from.type==='stock'){
-    const se=board.querySelector('[data-pile="stock"]');
-    if(!se){ toast(t('noMove')); return; }
-    G.hintsLeft--; updateHintBtn();
-    toast(t('drawTip'));
-    se.classList.add('hint-glow'); setTimeout(()=>se.classList.remove('hint-glow'),1600);
-    return;
+  // No real board move: the "draw from stock" nudge (or nothing) never costs a hint.
+  if(!h || h.from.type==='stock'){
+    if(h && h.from.type==='stock'){ glowHint(board.querySelector('[data-pile="stock"]')); toast(t('drawTip')); }
+    else { toast(t('noMove')); }
+    return; // do NOT decrement
   }
   const fe=elForLoc(h.from), te=elForLoc(h.to);
-  if(!fe || !te){ toast(t('noMove')); return; }
+  if(!fe || !te){ toast(t('noMove')); return; } // couldn't show it -> no decrement
+  // A real hint was found AND can be shown: decrement once and highlight it.
   G.hintsLeft--; updateHintBtn();
-  if(fe){ fe.classList.add('hint-glow'); setTimeout(()=>fe.classList.remove('hint-glow'),1600); }
-  if(te && te!==fe){ te.classList.add('hint-glow'); setTimeout(()=>te.classList.remove('hint-glow'),1600); }
+  glowHint(fe);
+  if(te!==fe) glowHint(te);
 }
 
 function quitGame(){ stopTimer(); show('screenModes'); }
