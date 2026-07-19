@@ -35,10 +35,15 @@ Standard Klondike:
 - **Tap** a card to select it, tap a destination to move; **double-tap** to auto-send to a foundation.
 - Tap the stock to draw / recycle.
 
-Win all four foundations → a **festive win screen** with Francis and fireworks 🎆.
+Win all four foundations → a **card cascade + fireworks** win screen, then a
+floating BRAVO with Replay / Menu.
+
+Every new game is dealt from a pool of **pre-verified winnable layouts**
+(`assets/deals.js`), so a game is always theoretically winnable. The holder-only
+**Issue ?** button re-checks the current position with the same solver.
 
 ## Assets (`assets/`)
 
 Integrated card artwork lives in `assets/card-art/` with one PNG per card. The root
-`assets/` folder keeps only the interface artwork still used by the game: `francis`,
-`triste` and `festif`.
+`assets/` folder keeps the interface artwork still used by the game: `roi` (menu),
+`reine` (mode select) and `triste` (locked modal), plus `deals.js` (winnable pool).
