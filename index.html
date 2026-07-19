@@ -289,8 +289,9 @@ body.playing #screenGame.card{
   display:flex; align-items:center; gap:6px;
 }
 .ctrl-btn:active{transform:scale(0.94)}
-.ctrl-btn.hint.locked{background:linear-gradient(135deg,#d97706,#b45309); border-color:rgba(252,211,77,0.5)}
-.ctrl-btn.hint svg{width:16px; height:16px}
+.ctrl-btn.hint.locked,.ctrl-btn.solve.locked{background:linear-gradient(135deg,#d97706,#b45309); border-color:rgba(252,211,77,0.5)}
+.ctrl-btn.hint svg,.ctrl-btn.solve svg{width:16px; height:16px}
+.ctrl-btn.solve{background:rgba(14,165,233,0.32); border-color:rgba(14,165,233,0.5)}
 
 /* OVERLAYS / MODAL */
 .overlay{
@@ -353,46 +354,56 @@ body.playing #screenGame.card{
   box-shadow:0 8px 26px rgba(0,0,0,0.55)}
 .win-btns .mbtn:active{transform:scale(0.96)}
 
-/* TUTORIAL */
+/* TUTORIAL (compact, landscape-friendly) */
 .tuto-overlay{position:fixed; inset:0; z-index:130; display:none; align-items:center; justify-content:center;
-  padding:20px; background:rgba(6,3,16,0.86); backdrop-filter:blur(4px)}
+  padding:14px; background:rgba(6,3,16,0.86); backdrop-filter:blur(4px)}
 .tuto-overlay.show{display:flex; animation:fadein .25s}
-.tuto-card{width:min(370px,94%); text-align:center;
+.tuto-card{display:flex; gap:18px; align-items:center; width:min(600px,96%); max-height:94vh; overflow:auto;
   background:linear-gradient(145deg,rgba(13,5,32,0.97),rgba(30,10,65,0.97));
-  border:2px solid rgba(180,100,255,0.4); border-radius:22px; padding:22px 20px 20px;
+  border:2px solid rgba(180,100,255,0.4); border-radius:20px; padding:16px 18px;
   box-shadow:0 0 55px rgba(120,40,200,0.55)}
-.tuto-title{font-family:'Bangers',cursive; font-size:30px; letter-spacing:2px; color:var(--gold);
-  text-shadow:0 0 18px rgba(255,215,0,0.5); margin-bottom:2px}
-.tuto-demo{position:relative; width:280px; height:118px; margin:10px auto 6px}
-.tuto-slot{position:absolute; top:14px; width:62px; height:88px; border:2px dashed rgba(200,160,255,0.45);
-  border-radius:9px; background:rgba(255,255,255,0.03)}
-.tuto-slotA{left:22px} .tuto-slotB{right:22px}
-.tuto-slotB::after{content:'♥'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  font-size:26px; color:rgba(216,31,42,0.45)}
-.tuto-democard{position:absolute; top:14px; left:22px; width:62px; height:88px; border-radius:9px; z-index:2;
+.tuto-left{flex:0 0 auto}
+.tuto-right{flex:1 1 auto; text-align:left; min-width:0}
+.tuto-title{font-family:'Bangers',cursive; font-size:25px; letter-spacing:2px; color:var(--gold);
+  text-shadow:0 0 16px rgba(255,215,0,0.5); margin-bottom:9px}
+.tuto-demo{position:relative; width:214px; height:104px}
+.tuto-slot{position:absolute; top:10px; width:58px; height:82px; border:2px dashed rgba(200,160,255,0.45);
+  border-radius:8px; background:rgba(255,255,255,0.03)}
+.tuto-slotA{left:8px} .tuto-slotB{left:148px}
+.tuto-slotB::after{content:'8'; position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:flex-start;
+  padding:4px 0 0 5px; font-family:'Bangers',cursive; font-size:15px; color:rgba(20,20,34,0.32)}
+.tuto-tapring{position:absolute; width:34px; height:34px; border-radius:50%; border:2px solid var(--gold);
+  z-index:4; opacity:0; pointer-events:none; animation:tutoRing 3.6s ease-in-out infinite}
+@keyframes tutoRing{0%,8%{opacity:0; transform:scale(0.4)}12%{left:28px; top:44px; opacity:.9; transform:scale(1)}
+  20%{opacity:0; transform:scale(1.5)}
+  48%{left:168px; top:44px; opacity:0; transform:scale(0.4)}52%{left:168px; top:44px; opacity:.9; transform:scale(1)}
+  60%,100%{left:168px; top:44px; opacity:0; transform:scale(1.5)}}
+.tuto-democard{position:absolute; top:10px; left:8px; width:58px; height:82px; border-radius:8px; z-index:2;
   background:radial-gradient(ellipse at 50% 40%,rgba(255,232,146,0.3),transparent 46%),linear-gradient(160deg,#fffdf7,#eadcc1);
-  border:1px solid rgba(55,38,18,0.3); box-shadow:0 5px 12px rgba(0,0,0,0.45);
-  display:flex; align-items:center; justify-content:center; font-family:'Bangers',cursive; font-size:24px; color:#d81f2a;
-  animation:tutoslide 3.2s ease-in-out infinite}
-.tuto-democard::before{content:'♥'; position:absolute; top:3px; left:5px; font-size:13px}
-@keyframes tutoslide{0%,14%{transform:translate(0,0) scale(1)}
-  22%{transform:translate(0,-6px) scale(1.08)}
-  52%{transform:translate(174px,-6px) scale(1.08)}
-  64%,100%{transform:translate(174px,0) scale(1)}}
-.tuto-hand{position:absolute; top:74px; left:52px; font-size:30px; z-index:3; pointer-events:none;
-  filter:drop-shadow(0 3px 3px rgba(0,0,0,0.5)); animation:tutohand 3.2s ease-in-out infinite}
-@keyframes tutohand{0%,14%{transform:translate(0,0)}22%{transform:translate(0,-6px)}
-  52%{transform:translate(174px,-6px)}64%,100%{transform:translate(174px,0)}}
-.tuto-tips{display:flex; flex-direction:column; gap:8px; margin:8px 0 16px; text-align:left}
-.tuto-tip{display:flex; align-items:center; gap:11px; font-size:13px; line-height:1.3; color:#ecdcff;
-  background:rgba(255,255,255,0.05); border:1px solid rgba(168,85,247,0.25); border-radius:12px; padding:9px 12px}
-.tuto-tip .ic{font-size:20px; flex:0 0 auto}
-.tuto-go{width:100%; padding:13px; border:none; border-radius:14px; font-family:'Bangers',cursive;
+  border:1px solid rgba(55,38,18,0.3);
+  display:flex; align-items:center; justify-content:center; font-family:'Bangers',cursive; font-size:23px; color:#d81f2a;
+  animation:tutoTap 3.6s ease-in-out infinite}
+.tuto-democard::before{content:'♥'; position:absolute; top:3px; left:5px; font-size:12px}
+@keyframes tutoTap{
+  0%,10%{transform:translate(0,0); box-shadow:0 4px 10px rgba(0,0,0,0.45)}
+  18%{transform:translate(0,-6px); box-shadow:0 0 0 3px var(--gold),0 8px 15px rgba(0,0,0,0.5)}
+  46%{transform:translate(140px,-6px); box-shadow:0 0 0 3px var(--gold),0 8px 15px rgba(0,0,0,0.5)}
+  54%,100%{transform:translate(140px,0); box-shadow:0 4px 10px rgba(0,0,0,0.45)}}
+.tuto-hand{position:absolute; top:58px; left:26px; font-size:27px; z-index:3; pointer-events:none;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,0.5)); animation:tutoHand 3.6s ease-in-out infinite}
+@keyframes tutoHand{0%,10%{transform:translate(0,0)}14%{transform:translate(0,4px)}18%{transform:translate(0,-5px)}
+  46%{transform:translate(140px,-5px)}50%{transform:translate(140px,4px)}54%,100%{transform:translate(140px,0)}}
+.tuto-tips{display:flex; flex-direction:column; gap:7px; margin:0 0 12px}
+.tuto-tip{display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.25; color:#ecdcff;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(168,85,247,0.25); border-radius:11px; padding:8px 11px}
+.tuto-tip.primary{border-color:rgba(255,215,0,0.45); background:rgba(255,215,0,0.10); color:#fff}
+.tuto-tip .ic{font-size:18px; flex:0 0 auto}
+.tuto-go{width:100%; padding:12px; border:none; border-radius:13px; font-family:'Bangers',cursive;
   font-size:18px; letter-spacing:1px; color:#fff; cursor:pointer; touch-action:manipulation;
   background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 5px 22px rgba(22,163,74,0.45); transition:transform .1s}
 .tuto-go:active{transform:scale(0.97)}
-.tuto-skip{position:absolute; z-index:131; bottom:calc(20px + env(safe-area-inset-bottom)); right:20px;
-  background:rgba(0,0,0,0.45); color:#fff; border:1px solid rgba(255,215,0,0.4); border-radius:999px;
+.tuto-skip{position:absolute; z-index:131; bottom:calc(16px + env(safe-area-inset-bottom)); right:16px;
+  background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(255,215,0,0.4); border-radius:999px;
   padding:9px 18px; font-family:'Fredoka One',cursive; font-size:13px; cursor:pointer; touch-action:manipulation;
   box-shadow:0 4px 16px rgba(0,0,0,0.4); transition:transform .1s}
 .tuto-skip:active{transform:scale(0.95)}
@@ -430,7 +441,7 @@ body.playing #screenGame.card{
 <div class="app">
 
   <div class="brand">
-    <img alt="Francis" id="brandImg" src="assets/francis.png">
+    <img alt="Roi" id="brandImg" src="assets/roi.png">
     <h1>CHICKEN<br>SOLITAIRE</h1>
     <div class="tagline" id="tagline">FRANCIS LE COQ</div>
   </div>
@@ -494,6 +505,7 @@ body.playing #screenGame.card{
       <button class="ctrl-btn" onclick="newDeal()">🔄 <span id="lblNew">Nouvelle</span></button>
       <button class="ctrl-btn" onclick="undo()">↩️ <span id="lblUndo">Annuler</span></button>
       <button class="ctrl-btn hint" id="hintBtn" onclick="useHint()"></button>
+      <button class="ctrl-btn solve" id="solveBtn" onclick="checkSolvable()"></button>
     </div>
   </div>
 
@@ -513,19 +525,24 @@ body.playing #screenGame.card{
 <!-- TUTORIAL -->
 <div class="tuto-overlay" id="tutoOverlay">
   <div class="tuto-card">
-    <div class="tuto-title" id="tutoTitle">COMMENT JOUER</div>
-    <div class="tuto-demo">
-      <div class="tuto-slot tuto-slotA"></div>
-      <div class="tuto-slot tuto-slotB"></div>
-      <div class="tuto-democard">8</div>
-      <div class="tuto-hand">👆</div>
+    <div class="tuto-left">
+      <div class="tuto-demo">
+        <div class="tuto-slot tuto-slotA"></div>
+        <div class="tuto-slot tuto-slotB"></div>
+        <div class="tuto-tapring"></div>
+        <div class="tuto-democard">9</div>
+        <div class="tuto-hand">👆</div>
+      </div>
     </div>
-    <div class="tuto-tips">
-      <div class="tuto-tip"><span class="ic">✋</span><span id="tutoDrag">Glisse une carte vers sa pile</span></div>
-      <div class="tuto-tip"><span class="ic">👆</span><span id="tutoTap">…ou tape-la, puis tape sa destination</span></div>
-      <div class="tuto-tip"><span class="ic">⚡</span><span id="tutoDouble">Double-tape pour l'envoyer aux fondations</span></div>
+    <div class="tuto-right">
+      <div class="tuto-title" id="tutoTitle">COMMENT JOUER</div>
+      <div class="tuto-tips">
+        <div class="tuto-tip primary"><span class="ic">👆</span><span id="tutoTap">Tape une carte, puis tape où la poser</span></div>
+        <div class="tuto-tip"><span class="ic">✋</span><span id="tutoDrag">…ou glisse-la directement</span></div>
+        <div class="tuto-tip"><span class="ic">⚡</span><span id="tutoDouble">Double-tape → fondations</span></div>
+      </div>
+      <button class="tuto-go" id="tutoGo" onclick="dismissTutorial()">C'EST PARTI !</button>
     </div>
-    <button class="tuto-go" id="tutoGo" onclick="dismissTutorial()">C'EST PARTI !</button>
   </div>
   <button class="tuto-skip" id="tutoSkip" onclick="dismissTutorial()">Passer ▸</button>
 </div>
@@ -540,6 +557,7 @@ body.playing #screenGame.card{
   </div>
 </div>
 
+<script src="assets/deals.js"></script>
 <script>
 'use strict';
 const tg = window.Telegram?.WebApp;
@@ -562,10 +580,14 @@ const I18N = {
     scoreLbl:'SCORE', timeLbl:'TEMPS', movesLbl:'COUPS',
     winTitle:'🎉 GAGNÉ ! 🎉', winText:'Francis a rangé toutes les cartes !',
     bravo:'🎉 BRAVO ! 🎉', tapContinue:'Tape pour continuer',
-    tutoTitle:'COMMENT JOUER', tutoDrag:'Glisse une carte vers sa pile',
-    tutoTap:'…ou tape-la, puis tape sa destination',
-    tutoDouble:'Double-tape pour l\'envoyer aux fondations',
+    tutoTitle:'COMMENT JOUER', tutoTap:'Tape une carte, puis tape où la poser',
+    tutoDrag:'…ou glisse-la directement',
+    tutoDouble:'Double-tape → fondations',
     tutoGo:'C\'EST PARTI !', tutoSkip:'Passer ▸',
+    solveLbl:'Issue ?', solveChecking:'🔎 Analyse en cours...',
+    solveYes:'✅ Une issue existe encore !', solveNo:'❌ Aucune issue... recommence !',
+    solveUnknown:'🤔 Position trop complexe à vérifier',
+    lockedSolve:'Le bouton <b>Issue</b> est réservé aux détenteurs de <b>$FRANC</b> ou d\'une <b>⭐</b>.<br>Connecte ton wallet pour le débloquer !',
     replay:'Rejouer', toModes:'Modes', toMenu:'Menu',
     noMove:'Aucun coup possible... pioche !', noHints:'Plus d\'indices !', drawTip:'💡 Pioche une carte !',
     hintsLeft:'Indices',
@@ -586,10 +608,14 @@ const I18N = {
     scoreLbl:'SCORE', timeLbl:'TIME', movesLbl:'MOVES',
     winTitle:'🎉 YOU WIN! 🎉', winText:'Francis sorted every card!',
     bravo:'🎉 BRAVO! 🎉', tapContinue:'Tap to continue',
-    tutoTitle:'HOW TO PLAY', tutoDrag:'Drag a card onto its pile',
-    tutoTap:'…or tap it, then tap the destination',
-    tutoDouble:'Double-tap to send it to the foundations',
+    tutoTitle:'HOW TO PLAY', tutoTap:'Tap a card, then tap where to place it',
+    tutoDrag:'…or just drag it',
+    tutoDouble:'Double-tap → foundations',
     tutoGo:'LET\'S GO!', tutoSkip:'Skip ▸',
+    solveLbl:'Solvable?', solveChecking:'🔎 Analysing...',
+    solveYes:'✅ A win is still possible!', solveNo:'❌ No way out... start over!',
+    solveUnknown:'🤔 Position too complex to verify',
+    lockedSolve:'The <b>Solvable</b> button is for <b>$FRANC</b> holders or a <b>⭐</b>.<br>Connect your wallet to unlock it!',
     replay:'Replay', toModes:'Modes', toMenu:'Menu',
     noMove:'No moves left... draw!', noHints:'No hints left!', drawTip:'💡 Draw a card!',
     hintsLeft:'Hints',
@@ -636,7 +662,7 @@ async function detectHolder(){
       localStorage.setItem('flc_reason', unlockReason || '');
     }catch(e){/* keep cached */}
   }
-  renderWalletStatus(); renderStatusBar(); renderModeLocks(); updateHintBtn();
+  renderWalletStatus(); renderStatusBar(); renderModeLocks(); updateHintBtn(); updateSolveBtn();
 }
 
 function lockSvg(open){
@@ -709,7 +735,9 @@ function show(id){
   document.body.classList.toggle('playing', id==='screenGame');
   if(id==='screenGame') enterLandscapeMode();
   else releaseLandscapeMode();
-  if(id==='screenModes'){ renderModeBests(); renderModeLocks(); }
+  const brand=document.getElementById('brandImg');
+  if(id==='screenMenu'){ brand.src='assets/roi.png'; brand.alt='Roi'; }
+  else if(id==='screenModes'){ brand.src='assets/reine.png'; brand.alt='Reine'; renderModeBests(); renderModeLocks(); }
   if(id!=='screenGame') stopTimer();
   window.scrollTo(0,0);
 }
@@ -762,7 +790,7 @@ function applyLang(){
   document.getElementById('tutoDouble').textContent=t('tutoDouble');
   document.getElementById('tutoGo').textContent=t('tutoGo');
   document.getElementById('tutoSkip').textContent=t('tutoSkip');
-  renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn();
+  renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn(); updateSolveBtn();
 }
 
 /* ---------- Modal ---------- */
@@ -770,7 +798,7 @@ function showLockModal(kind){
   const m=document.getElementById('modal');
   m.innerHTML=`<img src="assets/triste.png" alt="">
     <h2 class="locked">🔒 ${t('lockedTitle')}</h2>
-    <p>${kind==='hint'?t('lockedHint'):t('lockedMode')}</p>
+    <p>${kind==='hint'?t('lockedHint'):kind==='solve'?t('lockedSolve'):t('lockedMode')}</p>
     <button class="mbtn btn-wallet" onclick="goConnectWallet()">${t('btnConnect')}</button>
     <button class="mbtn btn-purple" onclick="closeModal()">${t('btnClose')}</button>`;
   document.getElementById('overlay').classList.add('show');
@@ -779,6 +807,77 @@ function closeModal(){ document.getElementById('overlay').classList.remove('show
 function toast(msg){
   const el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show');
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+/* ============================================================
+   SOLVER + SOLVABLE-DEAL POOL
+   Deals are picked from a pool of pre-verified winnable layouts so a
+   new game is always theoretically winnable. The same best-first solver
+   also powers the on-demand "Issue ?" check on the current position.
+   ============================================================ */
+const DEAL_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const DEALS = (window.CS_DEALS && window.CS_DEALS[1] ? window.CS_DEALS : {1:[],3:[]});
+const _red = s => s===1||s===2;
+const _OPP = {0:[1,2],1:[0,3],2:[0,3],3:[1,2]};
+function _clone(st){ return {f:st.f.slice(), piles:st.piles.map(p=>p.map(c=>({s:c.s,r:c.r,u:c.u}))), stock:st.stock.map(c=>({s:c.s,r:c.r})), waste:st.waste.map(c=>({s:c.s,r:c.r})), draw:st.draw}; }
+function _seq(run){ for(let i=1;i<run.length;i++){ if(run[i].r!==run[i-1].r-1)return false; if(_red(run[i].s)===_red(run[i-1].s))return false; } return true; }
+function _won(st){ return st.f[0]===13&&st.f[1]===13&&st.f[2]===13&&st.f[3]===13; }
+function _safe(st,c){ const o=_OPP[c.s]; return st.f[o[0]]>=c.r-1 && st.f[o[1]]>=c.r-1; }
+function _flip(p){ if(p.length){ const t=p[p.length-1]; if(!t.u)t.u=true; } }
+function _auto(st){ let m=true; while(m){ m=false;
+  if(st.waste.length){ const c=st.waste[st.waste.length-1]; if(st.f[c.s]===c.r-1&&_safe(st,c)){ st.f[c.s]=c.r; st.waste.pop(); m=true; continue; } }
+  for(let p=0;p<7;p++){ const pile=st.piles[p]; if(pile.length){ const c=pile[pile.length-1]; if(c.u&&st.f[c.s]===c.r-1&&_safe(st,c)){ st.f[c.s]=c.r; pile.pop(); _flip(pile); m=true; } } }
+}}
+function _key(st){ let ps=[]; for(const pile of st.piles){ let s=''; for(const c of pile) s+=(c.u?'U':'d')+c.s+c.r+','; ps.push(s);} ps.sort();
+  return st.f.join('.')+'#'+ps.join('|')+'#W'+st.waste.map(c=>c.s+''+c.r).join(',')+'#S'+st.stock.map(c=>c.s+''+c.r).join(','); }
+function _heur(st){ let fd=0; for(const p of st.piles)for(const c of p)if(!c.u)fd++; return (st.f[0]+st.f[1]+st.f[2]+st.f[3])*12 - fd*3 - (st.stock.length+st.waste.length); }
+function _succ(st){ const out=[];
+  if(st.waste.length){ const c=st.waste[st.waste.length-1]; if(st.f[c.s]===c.r-1){ const n=_clone(st); n.waste.pop(); n.f[c.s]=c.r; out.push(n);} }
+  for(let p=0;p<7;p++){ const pile=st.piles[p]; if(pile.length){ const c=pile[pile.length-1]; if(c.u&&st.f[c.s]===c.r-1){ const n=_clone(st); n.piles[p].pop(); n.f[c.s]=c.r; _flip(n.piles[p]); out.push(n);} } }
+  if(st.waste.length){ const c=st.waste[st.waste.length-1];
+    for(let d=0;d<7;d++){ const dp=st.piles[d];
+      if(!dp.length){ if(c.r===13){ const n=_clone(st); n.waste.pop(); n.piles[d].push({s:c.s,r:c.r,u:true}); out.push(n);} }
+      else { const t=dp[dp.length-1]; if(t.u&&_red(t.s)!==_red(c.s)&&t.r===c.r+1){ const n=_clone(st); n.waste.pop(); n.piles[d].push({s:c.s,r:c.r,u:true}); out.push(n);} } } }
+  for(let p=0;p<7;p++){ const pile=st.piles[p]; let fu=-1; for(let i=0;i<pile.length;i++){if(pile[i].u){fu=i;break;}} if(fu<0)continue;
+    for(let i=fu;i<pile.length;i++){ const run=pile.slice(i); if(!_seq(run))continue; const h=run[0];
+      for(let d=0;d<7;d++){ if(d===p)continue; const dp=st.piles[d];
+        if(!dp.length){ if(h.r===13&&i>0){ const n=_clone(st); const rr=n.piles[p].splice(i); for(const c of rr)n.piles[d].push(c); _flip(n.piles[p]); out.push(n);} }
+        else { const t=dp[dp.length-1]; if(t.u&&_red(t.s)!==_red(h.s)&&t.r===h.r+1){ const n=_clone(st); const rr=n.piles[p].splice(i); for(const c of rr)n.piles[d].push(c); _flip(n.piles[p]); out.push(n);} } } } }
+  if(st.stock.length>0){ const n=_clone(st); const k=Math.min(st.draw,n.stock.length); for(let j=0;j<k;j++)n.waste.push(n.stock.pop()); out.push(n); }
+  else if(st.waste.length>0){ const n=_clone(st); while(n.waste.length)n.stock.push(n.waste.pop()); out.push(n); }
+  return out;
+}
+/* returns 'win' | 'dead' | 'unknown' */
+function solveKlondike(initSt, budget){
+  const start=_clone(initSt); _auto(start); if(_won(start))return 'win';
+  const heap=[];
+  const push=(st)=>{ const n={st,sc:_heur(st)}; heap.push(n); let i=heap.length-1; while(i>0){ const pa=(i-1)>>1; if(heap[pa].sc>=heap[i].sc)break; const tmp=heap[pa];heap[pa]=heap[i];heap[i]=tmp; i=pa; } };
+  const pop=()=>{ const top=heap[0]; const last=heap.pop(); if(heap.length){ heap[0]=last; let i=0; for(;;){ let l=2*i+1,r=2*i+2,b=i; if(l<heap.length&&heap[l].sc>heap[b].sc)b=l; if(r<heap.length&&heap[r].sc>heap[b].sc)b=r; if(b===i)break; const tmp=heap[b];heap[b]=heap[i];heap[i]=tmp; i=b; } } return top; };
+  push(start); const seen=new Set([_key(start)]); let nodes=0;
+  while(heap.length){ if(nodes++>budget) return 'unknown'; const {st}=pop();
+    const succ=_succ(st);
+    for(const s of succ){ _auto(s); if(_won(s))return 'win'; const k=_key(s); if(seen.has(k))continue; seen.add(k); push(s); } }
+  return 'dead';
+}
+function gameToSolver(g){
+  return { f:[g.found[0].length,g.found[1].length,g.found[2].length,g.found[3].length],
+    piles:g.tab.map(col=>col.map(c=>({s:c.s,r:c.r,u:c.up}))),
+    stock:g.stock.map(c=>({s:c.s,r:c.r})), waste:g.waste.map(c=>({s:c.s,r:c.r})), draw:g.draw }; }
+
+/* ---------- Deal building (from the winnable pool) ---------- */
+function shuffleDeck(){ const d=[]; for(let s=0;s<4;s++)for(let r=1;r<=13;r++)d.push({s,r}); for(let i=d.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; const t=d[i];d[i]=d[j];d[j]=t;} return d; }
+function dealDeck(deck){ const tab=[[],[],[],[],[],[],[]]; let di=0;
+  for(let c=0;c<7;c++)for(let k=0;k<=c;k++){ const card=deck[di++]; tab[c].push({s:card.s,r:card.r,up:(k===c)}); }
+  const stock=[]; while(di<52){ const card=deck[di++]; stock.push({s:card.s,r:card.r,up:false}); }
+  return {tab,stock}; }
+function decodeDeck(code){ const deck=[]; for(const ch of code){ const i=DEAL_ALPHA.indexOf(ch); if(i<0)continue; deck.push({s:(i/13)|0, r:i%13+1}); } return deck; }
+function layoutToSolver(layout,draw){ return { f:[0,0,0,0], piles:layout.tab.map(col=>col.map(c=>({s:c.s,r:c.r,u:c.up}))), stock:layout.stock.map(c=>({s:c.s,r:c.r})), waste:[], draw }; }
+function buildSolvableLayout(drawCount){
+  const pool=DEALS[drawCount];
+  if(pool && pool.length){ return dealDeck(decodeDeck(pool[(Math.random()*pool.length)|0])); }
+  // fallback (only if the pool failed to load): shuffle + verify with the solver
+  for(let a=0;a<10;a++){ const layout=dealDeck(shuffleDeck()); if(solveKlondike(layoutToSolver(layout,drawCount),90000)==='win') return layout; }
+  return dealDeck(shuffleDeck());
 }
 
 /* ============================================================
@@ -792,18 +891,13 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))
 function startGame(drawCount){
   if(drawCount===3 && !isHolder){ showLockModal('mode'); return; }
   closeModal();
-  const deck=[];
-  for(let s=0;s<4;s++)for(let r=1;r<=13;r++)deck.push({s,r,up:false});
-  shuffle(deck);
-  G={draw:drawCount, stock:[], waste:[], found:[[],[],[],[]], tab:[[],[],[],[],[],[],[]],
+  const lay=buildSolvableLayout(drawCount);   // guaranteed winnable deal
+  G={draw:drawCount, stock:lay.stock, waste:[], found:[[],[],[],[]], tab:lay.tab,
      score:0, moves:0, hintsLeft:3, startTime:null, elapsed:0, won:false, history:[]};
-  let di=0;
-  for(let c=0;c<7;c++) for(let k=0;k<=c;k++){ const card=deck[di++]; card.up=(k===c); G.tab[c].push(card); }
-  while(di<deck.length){ const card=deck[di++]; card.up=false; G.stock.push(card); }
   sel=null;
   document.getElementById('gameBadge').textContent = (drawCount===1?'🂡 ':'🂣 ')+ (drawCount===1?t('mode1'):t('mode3'));
   show('screenGame');
-  layout(); render(); updateHUD(); updateHintBtn();
+  layout(); render(); updateHUD(); updateHintBtn(); updateSolveBtn();
   stopTimer();
   maybeShowTutorial();
 }
@@ -811,11 +905,10 @@ function newDeal(){ if(G) startGame(G.draw); }
 
 /* ---------- First-run tutorial ---------- */
 function maybeShowTutorial(){
-  if(localStorage.getItem('cs_tutorialDone')) return;
+  // shown at the start of every game; the player can skip it
   document.getElementById('tutoOverlay').classList.add('show');
 }
 function dismissTutorial(){
-  localStorage.setItem('cs_tutorialDone','1');
   document.getElementById('tutoOverlay').classList.remove('show');
 }
 
@@ -1279,6 +1372,25 @@ function updateHintBtn(){
     b.innerHTML=`💡 ${t('hint')} (${left})`;
   }
 }
+function updateSolveBtn(){
+  const b=document.getElementById('solveBtn');
+  if(!b)return;
+  if(!isHolder){ b.classList.add('locked'); b.innerHTML=`${lockSvg(false)} ${t('solveLbl')}`; }
+  else { b.classList.remove('locked'); b.innerHTML=`🧭 ${t('solveLbl')}`; }
+}
+let solveBusy=false;
+function checkSolvable(){
+  if(!isHolder){ showLockModal('solve'); return; }
+  if(!G || solveBusy) return;
+  solveBusy=true; toast(t('solveChecking'));
+  setTimeout(()=>{
+    let res; try{ res=solveKlondike(gameToSolver(G), 130000); }catch(e){ res='unknown'; }
+    if(res==='win') toast(t('solveYes'));
+    else if(res==='dead') toast(t('solveNo'));
+    else toast(t('solveUnknown'));
+    solveBusy=false;
+  }, 40);
+}
 function findHint(){
   const tops=[];
   if(G.waste.length) tops.push({loc:{type:'waste'},card:G.waste[G.waste.length-1]});
@@ -1331,7 +1443,7 @@ function useHint(){
   const fe=elForLoc(h.from), te=elForLoc(h.to);
   if(!fe || !te){ toast(t('noMove')); return; } // couldn't show it -> no decrement
   // A real hint was found AND can be shown: decrement once and highlight it.
-  G.hintsLeft--; updateHintBtn();
+  G.hintsLeft--; updateHintBtn(); updateSolveBtn();
   glowHint(fe);
   if(te!==fe) glowHint(te);
 }
@@ -1527,7 +1639,7 @@ function hideWin(){
 
 /* ---------- Dev helpers (harmless) ---------- */
 window.__dev={
-  holder:(v=true)=>{isHolder=v;localStorage.setItem('flc_holder',JSON.stringify(v));renderWalletStatus();renderStatusBar();renderModeLocks();updateHintBtn();},
+  holder:(v=true)=>{isHolder=v;localStorage.setItem('flc_holder',JSON.stringify(v));renderWalletStatus();renderStatusBar();renderModeLocks();updateHintBtn(); updateSolveBtn();},
   win:()=>{ if(!G)startGame(1); G.found=[[],[],[],[]]; for(let s=0;s<4;s++)for(let r=1;r<=13;r++)G.found[s].push({s,r,up:true}); G.tab=[[],[],[],[],[],[],[]];G.stock=[];G.waste=[]; G.elapsed=95000; onWin(); }
 };
 
@@ -1535,7 +1647,7 @@ window.__dev={
 function init(){
   if(tg){try{tg.ready();tg.expand();}catch(e){}}
   setLang(lang);
-  renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn();
+  renderWalletStatus(); renderStatusBar(); renderModeLocks(); renderModeBests(); updateHintBtn(); updateSolveBtn();
   detectHolder();
 }
 init();
